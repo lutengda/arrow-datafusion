@@ -25,6 +25,7 @@ use arrow::compute::{cast, concat};
 use arrow::datatypes::{DataType, Field};
 use async_trait::async_trait;
 use datafusion_common::{DataFusionError, SchemaError};
+use datafusion_expr::logical_plan::AggWithGrouping;
 use parquet::file::properties::WriterProperties;
 
 use datafusion_common::{Column, DFSchema, ScalarValue};
@@ -1112,6 +1113,7 @@ impl TableProvider for DataFrameTableProvider {
         state: &SessionState,
         projection: Option<&Vec<usize>>,
         filters: &[Expr],
+        _agg_with_grouping: Option<&AggWithGrouping>,
         limit: Option<usize>,
     ) -> Result<Arc<dyn ExecutionPlan>> {
         let mut expr = LogicalPlanBuilder::from(self.plan.clone());

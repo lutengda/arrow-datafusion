@@ -74,7 +74,9 @@ pub use nullif::SUPPORTED_NULLIF_TYPES;
 pub use operator::Operator;
 pub use partition_evaluator::PartitionEvaluator;
 pub use signature::{Signature, TypeSignature, Volatility};
-pub use table_source::{TableProviderFilterPushDown, TableSource, TableType};
+pub use table_source::{
+    TableProviderAggregationPushDown, TableProviderFilterPushDown, TableSource, TableType,
+};
 pub use udaf::AggregateUDF;
 pub use udf::ScalarUDF;
 pub use udwf::WindowUDF;
