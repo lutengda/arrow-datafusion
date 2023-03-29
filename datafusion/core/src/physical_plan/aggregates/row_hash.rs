@@ -146,7 +146,9 @@ impl GroupedHashAggregateStream {
             aggregates::aggregate_expressions(&agg.aggr_expr, &agg.mode, start_idx)?;
         let filter_expressions = match agg.mode {
             AggregateMode::Partial | AggregateMode::Single => agg_filter_expr,
-            AggregateMode::Final | AggregateMode::FinalPartitioned => {
+            AggregateMode::Final
+            | AggregateMode::FinalPartitioned
+            | AggregateMode::PartialMerge => {
                 vec![None; agg.aggr_expr.len()]
             }
         };
@@ -440,7 +442,9 @@ impl GroupedHashAggregateStream {
                             AggregateMode::Partial | AggregateMode::Single => {
                                 accumulator.update_batch(&values, &mut state_accessor)
                             }
-                            AggregateMode::FinalPartitioned | AggregateMode::Final => {
+                            AggregateMode::FinalPartitioned
+                            | AggregateMode::Final
+                            | AggregateMode::PartialMerge => {
                                 // note: the aggregation here is over states, not values, thus the merge
                                 accumulator.merge_batch(&values, &mut state_accessor)
                             }
@@ -463,7 +467,9 @@ impl GroupedHashAggregateStream {
                             AggregateMode::Partial | AggregateMode::Single => {
                                 accumulator.update_batch(&values)
                             }
-                            AggregateMode::FinalPartitioned | AggregateMode::Final => {
+                            AggregateMode::FinalPartitioned
+                            | AggregateMode::Final
+                            | AggregateMode::PartialMerge => {
                                 // note: the aggregation here is over states, not values, thus the merge
                                 accumulator.merge_batch(&values)
                             }
@@ -668,7 +674,7 @@ impl GroupedHashAggregateStream {
         let output_fields = self.schema.fields();
         // Store row accumulator results (either final output or intermediate state):
         let row_columns = match self.mode {
-            AggregateMode::Partial => {
+            AggregateMode::Partial | AggregateMode::PartialMerge => {
                 read_as_batch(&state_buffers, &self.row_aggr_schema)
             }
             AggregateMode::Final
@@ -706,19 +712,23 @@ impl GroupedHashAggregateStream {
         for (idx, &Range { start, end }) in self.indices[0].iter().enumerate() {
             for (field_idx, field) in output_fields[start..end].iter().enumerate() {
                 let current = match self.mode {
-                    AggregateMode::Partial => ScalarValue::iter_to_array(
-                        group_state_chunk.iter().map(|group_state| {
-                            group_state.accumulator_set[idx]
-                                .state()
-                                .map(|v| v[field_idx].clone())
-                                .expect("Unexpected accumulator state in hash aggregate")
-                        }),
-                    ),
+                    AggregateMode::Partial | AggregateMode::PartialMerge => {
+                        ScalarValue::iter_to_array(group_state_chunk.iter().map(
+                            |row_group_state| {
+                                row_group_state.accumulator_set[idx]
+                                    .state()
+                                    .map(|v| v[field_idx].clone())
+                                    .expect(
+                                        "Unexpected accumulator state in hash aggregate",
+                                    )
+                            },
+                        ))
+                    }
                     AggregateMode::Final
                     | AggregateMode::FinalPartitioned
                     | AggregateMode::Single => ScalarValue::iter_to_array(
-                        group_state_chunk.iter().map(|group_state| {
-                            group_state.accumulator_set[idx]
+                        group_state_chunk.iter().map(|row_group_state| {
+                            row_group_state.accumulator_set[idx]
                                 .evaluate()
                                 .expect("Unexpected accumulator state in hash aggregate")
                         }),

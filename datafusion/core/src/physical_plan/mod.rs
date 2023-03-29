@@ -716,6 +716,7 @@ pub mod windows;
 use crate::physical_plan::common::AbortOnDropSingle;
 use crate::physical_plan::repartition::RepartitionExec;
 use crate::physical_plan::sorts::sort_preserving_merge::SortPreservingMergeExec;
+pub use aggregates::{create_schema, AggregateStream};
 use datafusion_execution::TaskContext;
 pub use datafusion_physical_expr::{expressions, functions, hash_utils, udf};
 
