@@ -298,7 +298,8 @@ impl<'a> ConstEvaluator<'a> {
             | Expr::Cast { .. }
             | Expr::TryCast { .. }
             | Expr::InList { .. }
-            | Expr::GetIndexedField { .. } => true,
+            | Expr::GetIndexedField { .. }
+            | Expr::NamedStruct(_) => true,
         }
     }
 

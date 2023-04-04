@@ -178,6 +178,8 @@ pub enum Expr {
     /// A place holder which hold a reference to a qualified field
     /// in the outer query, used for correlated sub queries.
     OuterReferenceColumn(DataType, Column),
+    /// TODO
+    NamedStruct(Box<Vec<(String, Expr)>>),
 }
 
 /// Binary expression
@@ -696,6 +698,7 @@ impl Expr {
             Expr::TryCast { .. } => "TryCast",
             Expr::WindowFunction { .. } => "WindowFunction",
             Expr::Wildcard => "Wildcard",
+            Expr::NamedStruct(_) => "NamedStruct",
         }
     }
 
@@ -1143,6 +1146,9 @@ impl fmt::Display for Expr {
                 }
             },
             Expr::Placeholder(Placeholder { id, .. }) => write!(f, "{id}"),
+            Expr::NamedStruct(exprs) => {
+                write!(f, "NamedStruct ({exprs:?})")
+            }
         }
     }
 }
@@ -1438,6 +1444,7 @@ fn create_name(e: &Expr) -> Result<String> {
             "Create name does not support qualified wildcard".to_string(),
         )),
         Expr::Placeholder(Placeholder { id, .. }) => Ok((*id).to_string()),
+        Expr::NamedStruct(exprs) => Ok(format!("NamedStruct ({exprs:?})")),
     }
 }
 

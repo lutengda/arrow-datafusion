@@ -28,7 +28,8 @@ use crate::protobuf::{
         OptimizedPhysicalPlan,
     },
     AnalyzedLogicalPlanType, CubeNode, EmptyMessage, GroupingSetNode, LogicalExprList,
-    OptimizedLogicalPlanType, OptimizedPhysicalPlanType, PlaceholderNode, RollupNode,
+    NamedStructNode, OptimizedLogicalPlanType, OptimizedPhysicalPlanType,
+    PlaceholderNode, RollupNode, StructTuple,
 };
 use arrow::datatypes::{
     DataType, Field, IntervalMonthDayNanoType, IntervalUnit, Schema, SchemaRef, TimeUnit,
@@ -1005,6 +1006,20 @@ impl TryFrom<&Expr> for protobuf::LogicalExprNode {
                 "Proto serialization error: Expr::QualifiedWildcard { .. } not supported"
                     .to_string(),
             )),
+            Expr::NamedStruct(exprs) => {
+                let exprs = exprs
+                    .iter()
+                    .map(|(name, expr)| {
+                        Ok(StructTuple {
+                            name: name.clone(),
+                            expr: Some(expr.try_into()?),
+                        })
+                    })
+                    .collect::<Result<Vec<_>, Self::Error>>()?;
+                Self {
+                    expr_type: Some(ExprType::NamedStruct(NamedStructNode { exprs })),
+                }
+            }
         };
 
         Ok(expr_node)

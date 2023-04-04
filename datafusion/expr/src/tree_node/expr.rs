@@ -127,6 +127,9 @@ impl TreeNode for Expr {
                 expr_vec.extend(list.clone());
                 expr_vec
             }
+            Expr::NamedStruct(exprs) => {
+                exprs.iter().map(|(_, e)| e.clone()).collect()
+            },
         };
 
         for child in children.iter() {
@@ -358,6 +361,16 @@ impl TreeNode for Expr {
             }
             Expr::Placeholder(Placeholder { id, data_type }) => {
                 Expr::Placeholder(Placeholder { id, data_type })
+            }
+            Expr::NamedStruct(exprs) => {
+                let exprs = exprs
+                    .into_iter()
+                    .map(|(name, expr)| {
+                        let rewritten_expr = transform(expr)?;
+                        Ok((name, rewritten_expr))
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                Expr::NamedStruct(Box::new(exprs))
             }
         })
     }

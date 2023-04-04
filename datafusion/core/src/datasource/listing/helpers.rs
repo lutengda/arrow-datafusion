@@ -89,7 +89,8 @@ pub fn expr_applicable_for_cols(col_names: &[String], expr: &Expr) -> bool {
             | Expr::ScalarSubquery(_)
             | Expr::GetIndexedField { .. }
             | Expr::GroupingSet(_)
-            | Expr::Case { .. } => VisitRecursion::Continue,
+            | Expr::Case { .. }
+            | Expr::NamedStruct(_) => VisitRecursion::Continue,
 
             Expr::ScalarFunction(scalar_function) => {
                 match scalar_function.fun.volatility() {
