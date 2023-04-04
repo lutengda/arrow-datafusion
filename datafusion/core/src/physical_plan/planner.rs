@@ -348,6 +348,7 @@ fn create_physical_name(e: &Expr, is_first_expr: bool) -> Result<String> {
         Expr::Placeholder { .. } => Err(DataFusionError::Internal(
             "Create physical name does not support placeholder".to_string(),
         )),
+        Expr::NamedStruct(exprs) => Ok(format!("NamedStruct ({exprs:?})")),
     }
 }
 

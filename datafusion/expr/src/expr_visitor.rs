@@ -221,6 +221,11 @@ impl ExprVisitable for Expr {
                 list.iter()
                     .try_fold(visitor, |visitor, arg| arg.accept(visitor))
             }
+            Expr::NamedStruct(exprs) => {
+                exprs
+                    .iter()
+                    .try_fold(visitor, |visitor, (_, expr)| expr.accept(visitor))
+            },
         }?;
 
         visitor.post_visit(self)

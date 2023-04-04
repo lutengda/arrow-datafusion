@@ -296,6 +296,15 @@ impl ExprRewritable for Expr {
                 ))
             }
             Expr::Placeholder { id, data_type } => Expr::Placeholder { id, data_type },
+            Expr::NamedStruct(exprs) => {
+                let exprs = exprs
+                    .into_iter()
+                    .map(|(name, expr)| {
+                        Ok((name, expr.rewrite(rewriter)?))
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                Expr::NamedStruct(Box::new(exprs))
+            },
         };
 
         // now rewrite this expression itself

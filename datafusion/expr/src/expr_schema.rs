@@ -23,7 +23,7 @@ use crate::field_util::get_indexed_field;
 use crate::type_coercion::binary::binary_operator_data_type;
 use crate::{aggregate_function, function, window_function};
 use arrow::compute::can_cast_types;
-use arrow::datatypes::DataType;
+use arrow::datatypes::{DataType, Field};
 use datafusion_common::{Column, DFField, DFSchema, DataFusionError, ExprSchema, Result};
 
 /// trait to allow expr to typable with respect to a schema
@@ -152,6 +152,17 @@ impl ExprSchemable for Expr {
 
                 get_indexed_field(&data_type, key).map(|x| x.data_type().clone())
             }
+            Expr::NamedStruct(exprs) => {
+                let fields = exprs
+                    .iter()
+                    .map(|(name, expr)| {
+                        let data_type = expr.get_type(schema)?;
+                        let nullable = expr.nullable(schema)?;
+                        Ok(Field::new(name, data_type, nullable))
+                    })
+                    .collect::<Result<Vec<_>>>()?;
+                Ok(DataType::Struct(fields))
+            },
         }
     }
 
@@ -237,6 +248,7 @@ impl ExprSchemable for Expr {
                 // in projections
                 Ok(true)
             }
+            Expr::NamedStruct(_) => Ok(false),
         }
     }
 

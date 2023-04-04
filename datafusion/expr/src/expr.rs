@@ -220,8 +220,10 @@ pub enum Expr {
         /// The type the parameter will be filled in with
         data_type: Option<DataType>,
     },
+    /// TODO
+    NamedStruct(Box<Vec<(String, Expr)>>),
 }
-
+                                                                                                                                                                                                                                                                                                                                                                                                                         
 /// Binary expression
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct BinaryExpr {
@@ -625,6 +627,7 @@ impl Expr {
             Expr::TryCast { .. } => "TryCast",
             Expr::WindowFunction { .. } => "WindowFunction",
             Expr::Wildcard => "Wildcard",
+            Expr::NamedStruct(_) => "NamedStruct",
         }
     }
 
@@ -1075,6 +1078,9 @@ impl fmt::Debug for Expr {
                 }
             },
             Expr::Placeholder { id, .. } => write!(f, "{id}"),
+            Expr::NamedStruct(exprs) => {
+                write!(f, "NamedStruct ({exprs:?})")
+            },
         }
     }
 }
@@ -1357,6 +1363,9 @@ fn create_name(e: &Expr) -> Result<String> {
             "Create name does not support qualified wildcard".to_string(),
         )),
         Expr::Placeholder { id, .. } => Ok((*id).to_string()),
+        Expr::NamedStruct(exprs) => {
+            Ok(format!("NamedStruct ({exprs:?})"))
+        },
     }
 }
 

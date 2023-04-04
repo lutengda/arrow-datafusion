@@ -105,7 +105,8 @@ impl ExpressionVisitor for ApplicabilityVisitor<'_> {
             | Expr::ScalarSubquery(_)
             | Expr::GetIndexedField { .. }
             | Expr::GroupingSet(_)
-            | Expr::Case { .. } => Recursion::Continue(self),
+            | Expr::Case { .. }
+            | Expr::NamedStruct(_) => Recursion::Continue(self),
 
             Expr::ScalarFunction { fun, .. } => self.visit_volatility(fun.volatility()),
             Expr::ScalarUDF { fun, .. } => {
