@@ -1413,7 +1413,7 @@ pub struct Window {
     pub schema: DFSchemaRef,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct AggWithGrouping {
     pub group_expr: Vec<Expr>,
     pub agg_expr: Vec<Expr>,
@@ -1442,6 +1442,7 @@ pub struct TableScan {
 impl PartialEq for TableScan {
     fn eq(&self, other: &Self) -> bool {
         self.table_name == other.table_name
+            && self.source.name() == other.source.name()
             && self.projection == other.projection
             && self.projected_schema == other.projected_schema
             && self.filters == other.filters
@@ -1454,6 +1455,7 @@ impl Eq for TableScan {}
 impl Hash for TableScan {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.table_name.hash(state);
+        self.source.name().hash(state);
         self.projection.hash(state);
         self.projected_schema.hash(state);
         self.filters.hash(state);
