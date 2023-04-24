@@ -25,9 +25,9 @@ use crate::logical_plan::{
     Values, Window,
 };
 use crate::{
-    BinaryExpr, Cast, CreateMemoryTable, CreateView, DdlStatement, DmlStatement, Expr,
-    ExprSchemable, GroupingSet, LogicalPlan, LogicalPlanBuilder, Operator, TableScan,
-    TryCast,
+    BinaryExpr, Cast, CreateMemoryTable, CreateView, DdlStatement, DmlStatement, Explain,
+    Expr, ExprSchemable, GroupingSet, LogicalPlan, LogicalPlanBuilder, Operator,
+    TableScan, TryCast,
 };
 use arrow::datatypes::{DataType, TimeUnit};
 use datafusion_common::tree_node::{
@@ -953,15 +953,21 @@ pub fn from_plan(
                 input: Arc::new(inputs[0].clone()),
             }))
         }
-        LogicalPlan::Explain(_) => {
+        LogicalPlan::Explain(Explain {
+            verbose,
+            stringified_plans,
+            schema,
+            logical_optimization_succeeded,
+            ..
+        }) => {
             // Explain should be handled specially in the optimizers;
             // If this check cannot pass it means some optimizer pass is
             // trying to optimize Explain directly
-            if expr.is_empty() {
-                return Err(DataFusionError::Plan(
-                    "Invalid EXPLAIN command. Expression is empty".to_string(),
-                ));
-            }
+            // if expr.is_empty() {
+            //     return Err(DataFusionError::Plan(
+            //         "Invalid EXPLAIN command. Expression is empty".to_string(),
+            //     ));
+            // }
 
             if inputs.is_empty() {
                 return Err(DataFusionError::Plan(
@@ -969,7 +975,15 @@ pub fn from_plan(
                 ));
             }
 
-            Ok(plan.clone())
+            let new_plan = LogicalPlan::Explain(Explain {
+                verbose: *verbose,
+                plan: Arc::new(inputs[0].clone()),
+                stringified_plans: stringified_plans.clone(),
+                schema: schema.clone(),
+                logical_optimization_succeeded: *logical_optimization_succeeded,
+            });
+
+            Ok(new_plan)
         }
         LogicalPlan::Prepare(Prepare {
             name, data_types, ..
