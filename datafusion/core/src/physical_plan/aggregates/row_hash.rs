@@ -161,7 +161,9 @@ impl GroupedHashAggregateStream {
             let n_fields = match agg.mode {
                 // In partial aggregation, we keep additional fields in order to successfully
                 // merge aggregation results downstream.
-                AggregateMode::Partial => expr.state_fields()?.len(),
+                AggregateMode::Partial | AggregateMode::PartialMerge => {
+                    expr.state_fields()?.len()
+                }
                 _ => 1,
             };
             // Stores range of each expression:
