@@ -227,7 +227,9 @@ impl OptimizerRule for PushDownProjection {
                     .iter()
                     .map(|c| {
                         replace_map.get(c).cloned().ok_or_else(|| {
-                            DataFusionError::Internal("replace column failed".to_string())
+                            DataFusionError::Internal(format!(
+                                "replace column {c} failed, valid: {replace_map:?}"
+                            ))
                         })
                     })
                     .collect::<Result<HashSet<_>>>()?;
