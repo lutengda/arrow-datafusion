@@ -25,7 +25,7 @@ use arrow::datatypes::{DataType, Field, SchemaBuilder, SchemaRef};
 use arrow_schema::Schema;
 use async_trait::async_trait;
 use dashmap::DashMap;
-use datafusion_common::ToDFSchema;
+use datafusion_common::{SchemaExt, ToDFSchema};
 use datafusion_expr::expr::Sort;
 use datafusion_expr::logical_plan::AggWithGrouping;
 use datafusion_optimizer::utils::conjunction;
@@ -778,7 +778,7 @@ impl TableProvider for ListingTable {
         input: Arc<dyn ExecutionPlan>,
     ) -> Result<Arc<dyn ExecutionPlan>> {
         // Check that the schema of the plan matches the schema of this table.
-        if !input.schema().eq(&self.schema()) {
+        if !self.schema().equivalent_names_and_types(&input.schema()) {
             return Err(DataFusionError::Plan(
                 // Return an error if schema of the input query does not match with the table schema.
                 "Inserting query must have the same schema with the table.".to_string(),
@@ -818,7 +818,7 @@ impl TableProvider for ListingTable {
         let config = FileSinkConfig {
             object_store_url: self.table_paths()[0].object_store(),
             file_groups,
-            output_schema: input.schema(),
+            output_schema: self.schema(),
             table_partition_cols: self.options.table_partition_cols.clone(),
             writer_mode: crate::datasource::file_format::FileWriterMode::Append,
         };
