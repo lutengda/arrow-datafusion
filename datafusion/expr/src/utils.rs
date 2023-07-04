@@ -725,16 +725,22 @@ where
 /// // create new plan using rewritten_exprs in same position
 /// let new_plan = from_plan(&plan, rewritten_exprs, new_inputs);
 /// ```
+///
+/// Notice: sometimes [from_plan] will use schema of original plan, it don't change schema!
+/// Such as `Projection/Aggregate/Window`
 pub fn from_plan(
     plan: &LogicalPlan,
     expr: &[Expr],
     inputs: &[LogicalPlan],
 ) -> Result<LogicalPlan> {
     match plan {
-        LogicalPlan::Projection(_) => Ok(LogicalPlan::Projection(Projection::try_new(
-            expr.to_vec(),
-            Arc::new(inputs[0].clone()),
-        )?)),
+        LogicalPlan::Projection(Projection { schema, .. }) => {
+            Ok(LogicalPlan::Projection(Projection::try_new_with_schema(
+                expr.to_vec(),
+                Arc::new(inputs[0].clone()),
+                schema.clone(),
+            )?))
+        }
         LogicalPlan::Dml(DmlStatement {
             table_name,
             table_schema,
