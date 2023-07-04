@@ -552,9 +552,9 @@ pub async fn from_substrait_sorts(
             Some(k) => match k {
                 Direction(d) => {
                     let Some(direction) = SortDirection::from_i32(*d) else {
-                        return Err(DataFusionError::NotImplemented(
-                            format!("Unsupported Substrait SortDirection value {d}"),
-                        ))
+                        return Err(DataFusionError::NotImplemented(format!(
+                            "Unsupported Substrait SortDirection value {d}"
+                        )));
                     };
 
                     match direction {
