@@ -1489,9 +1489,10 @@ mod roundtrip_tests {
 
         let rt_func: ReturnTypeFunction =
             Arc::new(move |_| Ok(Arc::new(DataType::Int64)));
-        let accumulator: AccumulatorFactoryFunction = Arc::new(|_| Ok(Box::new(Example)));
+        let accumulator: AccumulatorFactoryFunction =
+            Arc::new(|_, _| Ok(Box::new(Example)));
         let st_func: StateTypeFunction =
-            Arc::new(move |_| Ok(Arc::new(vec![DataType::Int64])));
+            Arc::new(move |_, _| Ok(Arc::new(vec![DataType::Int64])));
 
         let udaf = AggregateUDF::new(
             "example",

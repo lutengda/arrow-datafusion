@@ -127,7 +127,7 @@ impl Serializeable for Expr {
                     arrow::datatypes::DataType::Null,
                     Arc::new(arrow::datatypes::DataType::Null),
                     Volatility::Immutable,
-                    Arc::new(|_| unimplemented!()),
+                    Arc::new(|_, _| unimplemented!()),
                     Arc::new(vec![]),
                 )))
             }

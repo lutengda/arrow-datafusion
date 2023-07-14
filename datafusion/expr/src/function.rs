@@ -43,7 +43,7 @@ pub type ReturnTypeFunction =
 /// Factory that returns an accumulator for the given aggregate, given
 /// its return datatype.
 pub type AccumulatorFactoryFunction =
-    Arc<dyn Fn(&DataType) -> Result<Box<dyn Accumulator>> + Send + Sync>;
+    Arc<dyn Fn(&[DataType], &DataType) -> Result<Box<dyn Accumulator>> + Send + Sync>;
 
 /// Factory that creates a PartitionEvaluator for the given window
 /// function
@@ -53,7 +53,7 @@ pub type PartitionEvaluatorFactory =
 /// Factory that returns the types used by an aggregator to serialize
 /// its state, given its return datatype.
 pub type StateTypeFunction =
-    Arc<dyn Fn(&DataType) -> Result<Arc<Vec<DataType>>> + Send + Sync>;
+    Arc<dyn Fn(&[DataType], &DataType) -> Result<Arc<Vec<DataType>>> + Send + Sync>;
 
 /// Returns the datatype of the scalar function
 #[deprecated(

@@ -50,6 +50,7 @@ pub fn create_aggregate_expr(
     Ok(Arc::new(AggregateFunctionExpr {
         fun: fun.clone(),
         args: input_phy_exprs.to_vec(),
+        input_data_type: input_exprs_types.clone(),
         data_type: (fun.return_type)(&input_exprs_types)?.as_ref().clone(),
         name: name.into(),
     }))
@@ -60,6 +61,7 @@ pub fn create_aggregate_expr(
 pub struct AggregateFunctionExpr {
     fun: AggregateUDF,
     args: Vec<Arc<dyn PhysicalExpr>>,
+    input_data_type: Vec<DataType>,
     /// Output / return type of this aggregate
     data_type: DataType,
     name: String,
@@ -83,7 +85,7 @@ impl AggregateExpr for AggregateFunctionExpr {
     }
 
     fn state_fields(&self) -> Result<Vec<Field>> {
-        let fields = (self.fun.state_type)(&self.data_type)?
+        let fields = (self.fun.state_type)(&self.input_data_type, &self.data_type)?
             .iter()
             .enumerate()
             .map(|(i, data_type)| {
@@ -103,11 +105,11 @@ impl AggregateExpr for AggregateFunctionExpr {
     }
 
     fn create_accumulator(&self) -> Result<Box<dyn Accumulator>> {
-        (self.fun.accumulator)(&self.data_type)
+        (self.fun.accumulator)(&self.input_data_type, &self.data_type)
     }
 
     fn create_sliding_accumulator(&self) -> Result<Box<dyn Accumulator>> {
-        let accumulator = (self.fun.accumulator)(&self.data_type)?;
+        let accumulator = (self.fun.accumulator)(&self.input_data_type, &self.data_type)?;
 
         // Accumulators that have window frame startings different
         // than `UNBOUNDED PRECEDING`, such as `1 PRECEEDING`, need to

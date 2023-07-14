@@ -289,7 +289,7 @@ impl TimeSum {
 
         let state_type = Arc::new(vec![timestamp_type.clone()]);
         let state_type: StateTypeFunction =
-            Arc::new(move |_| Ok(Arc::clone(&state_type)));
+            Arc::new(move |_, _| Ok(Arc::clone(&state_type)));
 
         let volatility = Volatility::Immutable;
 
@@ -297,7 +297,7 @@ impl TimeSum {
 
         let captured_state = Arc::clone(&test_state);
         let accumulator: AccumulatorFactoryFunction =
-            Arc::new(move |_| Ok(Box::new(Self::new(Arc::clone(&captured_state)))));
+            Arc::new(move |_, _| Ok(Box::new(Self::new(Arc::clone(&captured_state)))));
 
         let name = "time_sum";
 
@@ -391,13 +391,13 @@ impl FirstSelector {
         let state_type = Arc::new(Self::state_datatypes());
 
         let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(return_type.clone()));
-        let state_type: StateTypeFunction = Arc::new(move |_| Ok(state_type.clone()));
+        let state_type: StateTypeFunction = Arc::new(move |_, _| Ok(state_type.clone()));
 
         // Possible input signatures
         let signatures = vec![TypeSignature::Exact(Self::input_datatypes())];
 
         let accumulator: AccumulatorFactoryFunction =
-            Arc::new(|_| Ok(Box::new(Self::new())));
+            Arc::new(|_, _| Ok(Box::new(Self::new())));
 
         let volatility = Volatility::Immutable;
 

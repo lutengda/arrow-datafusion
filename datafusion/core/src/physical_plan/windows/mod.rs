@@ -543,7 +543,7 @@ mod tests {
             DataType::Int64,
             Arc::new(DataType::Int64),
             Volatility::Immutable,
-            Arc::new(|_| Ok(Box::new(MyCount(0)))),
+            Arc::new(|_, _| Ok(Box::new(MyCount(0)))),
             Arc::new(vec![DataType::Int64]),
         );
 

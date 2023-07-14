@@ -921,7 +921,7 @@ mod test {
             DataType::Float64,
             Arc::new(DataType::Float64),
             Volatility::Immutable,
-            Arc::new(|_| {
+            Arc::new(|_, _| {
                 Ok(Box::new(AvgAccumulator::try_new(
                     &DataType::Float64,
                     &DataType::Float64,
@@ -946,8 +946,8 @@ mod test {
         let return_type: ReturnTypeFunction =
             Arc::new(move |_| Ok(Arc::new(DataType::Float64)));
         let state_type: StateTypeFunction =
-            Arc::new(move |_| Ok(Arc::new(vec![DataType::UInt64, DataType::Float64])));
-        let accumulator: AccumulatorFactoryFunction = Arc::new(|_| {
+            Arc::new(move |_, _| Ok(Arc::new(vec![DataType::UInt64, DataType::Float64])));
+        let accumulator: AccumulatorFactoryFunction = Arc::new(|_, _| {
             Ok(Box::new(AvgAccumulator::try_new(
                 &DataType::Float64,
                 &DataType::Float64,

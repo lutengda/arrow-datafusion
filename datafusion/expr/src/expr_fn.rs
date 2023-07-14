@@ -783,7 +783,7 @@ pub fn create_udaf(
     state_type: Arc<Vec<DataType>>,
 ) -> AggregateUDF {
     let return_type: ReturnTypeFunction = Arc::new(move |_| Ok(return_type.clone()));
-    let state_type: StateTypeFunction = Arc::new(move |_| Ok(state_type.clone()));
+    let state_type: StateTypeFunction = Arc::new(move |_, _| Ok(state_type.clone()));
     AggregateUDF::new(
         name,
         &Signature::exact(vec![input_type], volatility),
