@@ -124,15 +124,13 @@ impl<'a, S: ContextProvider> SqlToRel<'a, S> {
                 return Ok(expr);
             }
         } else {
+            let order_by =
+                self.order_by_to_sort_expr(&function.order_by, schema, planner_context)?;
+            let order_by = (!order_by.is_empty()).then_some(order_by);
+
             // next, aggregate built-ins
             if let Ok(fun) = AggregateFunction::from_str(&name) {
                 let distinct = function.distinct;
-                let order_by = self.order_by_to_sort_expr(
-                    &function.order_by,
-                    schema,
-                    planner_context,
-                )?;
-                let order_by = (!order_by.is_empty()).then_some(order_by);
                 let args =
                     self.function_args_to_expr(function.args, schema, planner_context)?;
 
@@ -146,7 +144,7 @@ impl<'a, S: ContextProvider> SqlToRel<'a, S> {
                 let args =
                     self.function_args_to_expr(function.args, schema, planner_context)?;
                 return Ok(Expr::AggregateUDF(expr::AggregateUDF::new(
-                    fm, args, None, None,
+                    fm, args, None, order_by,
                 )));
             }
 

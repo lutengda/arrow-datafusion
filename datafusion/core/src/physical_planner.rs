@@ -202,10 +202,7 @@ fn create_physical_name(e: &Expr, is_first_expr: bool) -> Result<String> {
             ..
         }) => create_function_physical_name(&fun.to_string(), *distinct, args),
         Expr::AggregateUDF(AggregateUDF {
-            fun,
-            args,
-            filter,
-            order_by,
+            fun, args, filter, ..
         }) => {
             // TODO: Add support for filter and order by in AggregateUDF
             if filter.is_some() {
@@ -213,11 +210,11 @@ fn create_physical_name(e: &Expr, is_first_expr: bool) -> Result<String> {
                     "aggregate expression with filter is not supported".to_string(),
                 ));
             }
-            if order_by.is_some() {
-                return Err(DataFusionError::Execution(
-                    "aggregate expression with order_by is not supported".to_string(),
-                ));
-            }
+            // if order_by.is_some() {
+            //     return Err(DataFusionError::Execution(
+            //         "aggregate expression with order_by is not supported".to_string(),
+            //     ));
+            // }
             let mut names = Vec::with_capacity(args.len());
             for e in args {
                 names.push(create_physical_name(e, false)?);
@@ -726,6 +723,19 @@ impl DefaultPhysicalPlanner {
                         .collect::<Result<Vec<_>>>()?;
 
                     let (aggregates, filters, order_bys) : (Vec<_>, Vec<_>, Vec<_>) = multiunzip(agg_filter.into_iter());
+
+                    // not support concurrency
+                    if aggregates.iter().any(|e| !e.support_concurrency()) {
+                        return Ok(Arc::new(AggregateExec::try_new(
+                            AggregateMode::Single,
+                            groups,
+                            aggregates,
+                            filters,
+                            order_bys,
+                            input_exec,
+                            physical_input_schema,
+                        )?) as Arc<dyn ExecutionPlan>);
+                    }
 
                     let initial_aggr = Arc::new(AggregateExec::try_new(
                         AggregateMode::Partial,
@@ -1729,9 +1739,14 @@ pub fn create_aggregate_expr_with_name_and_maybe_filter(
                 ),
                 None => None,
             };
-
-            let agg_expr =
-                udaf::create_aggregate_expr(fun, &args, physical_input_schema, name);
+            let ordering_reqs = order_by.clone().unwrap_or(vec![]);
+            let agg_expr = udaf::create_aggregate_expr(
+                fun,
+                &args,
+                &ordering_reqs,
+                physical_input_schema,
+                name,
+            );
             Ok((agg_expr?, filter, order_by))
         }
         other => Err(DataFusionError::Internal(format!(

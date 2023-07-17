@@ -132,6 +132,10 @@ pub trait AggregateExpr: Send + Sync + Debug + PartialEq<dyn Any> {
             "Retractable Accumulator hasn't been implemented for {self:?} yet"
         )))
     }
+
+    fn support_concurrency(&self) -> bool {
+        true
+    }
 }
 
 /// Checks whether the given aggregate expression is order-sensitive.
@@ -139,7 +143,8 @@ pub trait AggregateExpr: Send + Sync + Debug + PartialEq<dyn Any> {
 /// However, a `FirstValue` depends on the input ordering (if the order changes,
 /// the first value in the list would change).
 pub fn is_order_sensitive(aggr_expr: &Arc<dyn AggregateExpr>) -> bool {
-    aggr_expr.as_any().is::<FirstValue>()
+    aggr_expr.order_bys().is_some()
+        || aggr_expr.as_any().is::<FirstValue>()
         || aggr_expr.as_any().is::<LastValue>()
         || aggr_expr.as_any().is::<OrderSensitiveArrayAgg>()
 }

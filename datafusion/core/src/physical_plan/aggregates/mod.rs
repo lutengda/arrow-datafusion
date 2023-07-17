@@ -788,6 +788,10 @@ impl ExecutionPlan for AggregateExec {
     }
 
     fn required_input_distribution(&self) -> Vec<Distribution> {
+        if self.aggr_expr().iter().any(|e| !e.support_concurrency()) {
+            return vec![Distribution::SinglePartition];
+        }
+
         match &self.mode {
             AggregateMode::Partial
             | AggregateMode::Single

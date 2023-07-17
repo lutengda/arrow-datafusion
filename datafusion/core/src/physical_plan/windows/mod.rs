@@ -89,8 +89,13 @@ pub fn create_window_expr(
             window_frame,
         )),
         WindowFunction::AggregateUDF(fun) => {
-            let aggregate =
-                udaf::create_aggregate_expr(fun.as_ref(), args, input_schema, name)?;
+            let aggregate = udaf::create_aggregate_expr(
+                fun.as_ref(),
+                args,
+                order_by,
+                input_schema,
+                name,
+            )?;
             window_expr_from_aggregate_expr(
                 partition_by,
                 order_by,

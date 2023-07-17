@@ -31,7 +31,9 @@ use crate::physical_plan::PhysicalExpr;
 use datafusion_common::{DataFusionError, Result};
 pub use datafusion_expr::AggregateUDF;
 
-use datafusion_physical_expr::aggregate::utils::down_cast_any_ref;
+use datafusion_physical_expr::{
+    aggregate::utils::down_cast_any_ref, LexOrdering, PhysicalSortExpr,
+};
 use std::sync::Arc;
 
 /// Creates a physical expression of the UDAF, that includes all necessary type coercion.
@@ -39,6 +41,7 @@ use std::sync::Arc;
 pub fn create_aggregate_expr(
     fun: &AggregateUDF,
     input_phy_exprs: &[Arc<dyn PhysicalExpr>],
+    ordering_reqs: &[PhysicalSortExpr],
     input_schema: &Schema,
     name: impl Into<String>,
 ) -> Result<Arc<dyn AggregateExpr>> {
@@ -47,12 +50,19 @@ pub fn create_aggregate_expr(
         .map(|arg| arg.data_type(input_schema))
         .collect::<Result<Vec<_>>>()?;
 
+    let ordering_reqs = if ordering_reqs.is_empty() || !fun.order_sensitive {
+        None
+    } else {
+        Some(ordering_reqs.to_vec())
+    };
+
     Ok(Arc::new(AggregateFunctionExpr {
         fun: fun.clone(),
         args: input_phy_exprs.to_vec(),
         input_data_type: input_exprs_types.clone(),
         data_type: (fun.return_type)(&input_exprs_types)?.as_ref().clone(),
         name: name.into(),
+        ordering_reqs,
     }))
 }
 
@@ -65,6 +75,7 @@ pub struct AggregateFunctionExpr {
     /// Output / return type of this aggregate
     data_type: DataType,
     name: String,
+    ordering_reqs: Option<LexOrdering>,
 }
 
 impl AggregateFunctionExpr {
@@ -165,6 +176,14 @@ impl AggregateExpr for AggregateFunctionExpr {
 
     fn name(&self) -> &str {
         &self.name
+    }
+
+    fn order_bys(&self) -> Option<&[datafusion_physical_expr::PhysicalSortExpr]> {
+        self.ordering_reqs.as_ref().map(|o| o.as_ref())
+    }
+
+    fn support_concurrency(&self) -> bool {
+        self.fun.support_concurrency
     }
 }
 

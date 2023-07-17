@@ -55,6 +55,8 @@ pub struct AggregateUDF {
     pub accumulator: AccumulatorFactoryFunction,
     /// the accumulator's state's description as a function of the return type
     pub state_type: StateTypeFunction,
+    pub order_sensitive: bool,
+    pub support_concurrency: bool,
 }
 
 impl Debug for AggregateUDF {
@@ -91,12 +93,35 @@ impl AggregateUDF {
         accumulator: &AccumulatorFactoryFunction,
         state_type: &StateTypeFunction,
     ) -> Self {
+        Self::new_with_preference(
+            name,
+            signature,
+            return_type,
+            accumulator,
+            state_type,
+            false,
+            true,
+        )
+    }
+
+    /// Create a new AggregateUDF
+    pub fn new_with_preference(
+        name: &str,
+        signature: &Signature,
+        return_type: &ReturnTypeFunction,
+        accumulator: &AccumulatorFactoryFunction,
+        state_type: &StateTypeFunction,
+        order_sensitive: bool,
+        support_concurrency: bool,
+    ) -> Self {
         Self {
             name: name.to_owned(),
             signature: signature.clone(),
             return_type: return_type.clone(),
             accumulator: accumulator.clone(),
             state_type: state_type.clone(),
+            order_sensitive,
+            support_concurrency,
         }
     }
 
