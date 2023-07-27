@@ -47,6 +47,7 @@ use arrow::{
     },
 };
 use arrow_array::timezone::Tz;
+use arrow_array::ArrowNativeTypeOp;
 use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime};
 
 // Constants we use throughout this file:
@@ -590,13 +591,8 @@ macro_rules! primitive_checked_op {
                 primitive_checked_right!(*b, $OPERATION, $SCALAR)
             }
             (Some(a), Some(b)) => {
-                if let Some(value) = (*a).$FUNCTION(*b) {
-                    Ok(ScalarValue::$SCALAR(Some(value)))
-                } else {
-                    Err(DataFusionError::Execution(
-                        "Overflow while calculating ScalarValue.".to_string(),
-                    ))
-                }
+                let value = (*a).$FUNCTION(*b)?;
+                Ok(ScalarValue::$SCALAR(Some(value)))
             }
         }
     };
@@ -604,13 +600,7 @@ macro_rules! primitive_checked_op {
 
 macro_rules! primitive_checked_right {
     ($TERM:expr, -, $SCALAR:ident) => {
-        if let Some(value) = $TERM.checked_neg() {
-            Ok(ScalarValue::$SCALAR(Some(value)))
-        } else {
-            Err(DataFusionError::Execution(
-                "Overflow while calculating ScalarValue.".to_string(),
-            ))
-        }
+        Ok(ScalarValue::$SCALAR(Some($TERM.neg_checked()?)))
     };
     ($TERM:expr, $OPERATION:tt, $SCALAR:ident) => {
         primitive_right!($TERM, $OPERATION, $SCALAR)
@@ -640,10 +630,10 @@ macro_rules! primitive_right {
         Ok(ScalarValue::$SCALAR(Some(-$TERM)))
     };
     ($TERM:expr, /, Float64) => {
-        Ok(ScalarValue::$SCALAR(Some($TERM.recip())))
+        Ok(ScalarValue::Float64(Some($TERM.recip())))
     };
     ($TERM:expr, /, Float32) => {
-        Ok(ScalarValue::$SCALAR(Some($TERM.recip())))
+        Ok(ScalarValue::Float32(Some($TERM.recip())))
     };
     ($TERM:expr, /, $SCALAR:ident) => {
         Err(DataFusionError::Internal(format!(
@@ -681,6 +671,12 @@ macro_rules! impl_checked_op {
     ($LHS:expr, $RHS:expr, $FUNCTION:ident, $OPERATION:tt) => {
         // Only covering primitive types that support checked_* operands, and fall back to raw operation for other types.
         match ($LHS, $RHS) {
+            (ScalarValue::Float32(lhs), ScalarValue::Float32(rhs)) => {
+                primitive_checked_op!(lhs, rhs, Float32, $FUNCTION, $OPERATION)
+            },
+            (ScalarValue::Float64(lhs), ScalarValue::Float64(rhs)) => {
+                primitive_checked_op!(lhs, rhs, Float64, $FUNCTION, $OPERATION)
+            },
             (ScalarValue::UInt64(lhs), ScalarValue::UInt64(rhs)) => {
                 primitive_checked_op!(lhs, rhs, UInt64, $FUNCTION, $OPERATION)
             },
@@ -714,6 +710,9 @@ macro_rules! impl_checked_op {
 
 macro_rules! impl_op {
     ($LHS:expr, $RHS:expr, +) => {
+        impl_op_arithmetic!($LHS, $RHS, +)
+    };
+    ($LHS:expr, $RHS:expr, /) => {
         impl_op_arithmetic!($LHS, $RHS, +)
     };
     ($LHS:expr, $RHS:expr, -) => {
@@ -2028,6 +2027,11 @@ impl ScalarValue {
         }
     }
 
+    pub fn div_checked<T: Borrow<ScalarValue>>(&self, other: T) -> Result<ScalarValue> {
+        let rhs = other.borrow();
+        impl_checked_op!(self, rhs, div_checked, /)
+    }
+
     pub fn add<T: Borrow<ScalarValue>>(&self, other: T) -> Result<ScalarValue> {
         let rhs = other.borrow();
         impl_op!(self, rhs, +)
@@ -2035,7 +2039,7 @@ impl ScalarValue {
 
     pub fn add_checked<T: Borrow<ScalarValue>>(&self, other: T) -> Result<ScalarValue> {
         let rhs = other.borrow();
-        impl_checked_op!(self, rhs, checked_add, +)
+        impl_checked_op!(self, rhs, add_checked, +)
     }
 
     pub fn sub<T: Borrow<ScalarValue>>(&self, other: T) -> Result<ScalarValue> {
@@ -2045,7 +2049,7 @@ impl ScalarValue {
 
     pub fn sub_checked<T: Borrow<ScalarValue>>(&self, other: T) -> Result<ScalarValue> {
         let rhs = other.borrow();
-        impl_checked_op!(self, rhs, checked_sub, -)
+        impl_checked_op!(self, rhs, sub_checked, -)
     }
 
     pub fn and<T: Borrow<ScalarValue>>(&self, other: T) -> Result<ScalarValue> {
