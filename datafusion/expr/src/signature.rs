@@ -102,6 +102,24 @@ impl TypeSignature {
             .collect::<Vec<String>>()
             .join(delimiter)
     }
+
+    pub fn error_message(
+        &self,
+        func_name: &str,
+        input_expr_types: &[DataType],
+    ) -> String {
+        let candidate_signatures = self
+            .to_string_repr()
+            .iter()
+            .map(|args_str| format!("\t{func_name}({args_str})"))
+            .collect::<Vec<String>>()
+            .join("\n");
+
+        format!(
+            "No function matches the given name and argument types '{}({})'. You might need to add explicit type casts.\n\tCandidate functions:\n{}",
+            func_name, TypeSignature::join_types(input_expr_types, ", "), candidate_signatures
+        )
+    }
 }
 
 /// The signature of a function defines the supported argument types

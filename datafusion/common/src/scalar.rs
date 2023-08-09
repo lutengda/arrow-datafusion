@@ -565,7 +565,7 @@ macro_rules! decimal_right {
         -$TERM
     };
     ($TERM:expr, /) => {
-        Err(DataFusionError::NotImplemented(format!(
+        return Err(DataFusionError::NotImplemented(format!(
             "Decimal reciprocation not yet supported",
         )))
     };
@@ -713,7 +713,7 @@ macro_rules! impl_op {
         impl_op_arithmetic!($LHS, $RHS, +)
     };
     ($LHS:expr, $RHS:expr, /) => {
-        impl_op_arithmetic!($LHS, $RHS, +)
+        impl_op_arithmetic!($LHS, $RHS, /)
     };
     ($LHS:expr, $RHS:expr, -) => {
         match ($LHS, $RHS) {
@@ -1113,6 +1113,9 @@ macro_rules! get_sign {
     };
     (-) => {
         -1
+    };
+    (/) => {
+        1
     };
 }
 

@@ -22,6 +22,7 @@ use crate::expr::{
 };
 use crate::field_util::get_indexed_field;
 use crate::type_coercion::binary::get_result_type;
+use crate::type_coercion::functions;
 use crate::{aggregate_function, window_function, LogicalPlan, Projection, Subquery};
 use arrow::compute::can_cast_types;
 use arrow::datatypes::{DataType, Field, Fields};
@@ -74,11 +75,21 @@ impl ExprSchemable for Expr {
             Expr::Cast(Cast { data_type, .. })
             | Expr::TryCast(TryCast { data_type, .. }) => Ok(data_type.clone()),
             Expr::ScalarUDF(ScalarUDF { fun, args }) => {
-                let data_types = args
+                let input_expr_types = args
                     .iter()
                     .map(|e| e.get_type(schema))
                     .collect::<Result<Vec<_>>>()?;
-                Ok((fun.return_type)(&data_types)?.as_ref().clone())
+                // verify that this is a valid set of data types for this function
+                functions::data_types(&input_expr_types, &fun.signature).map_err(
+                    |_| {
+                        let message = fun
+                            .signature
+                            .type_signature
+                            .error_message(&fun.name, &input_expr_types);
+                        DataFusionError::Plan(message)
+                    },
+                )?;
+                Ok((fun.return_type)(&input_expr_types)?.as_ref().clone())
             }
             Expr::ScalarFunction(ScalarFunction { fun, args }) => {
                 let data_types = args
@@ -102,11 +113,22 @@ impl ExprSchemable for Expr {
                 aggregate_function::return_type(fun, &data_types)
             }
             Expr::AggregateUDF(AggregateUDF { fun, args, .. }) => {
-                let data_types = args
+                let input_expr_types = args
                     .iter()
                     .map(|e| e.get_type(schema))
                     .collect::<Result<Vec<_>>>()?;
-                Ok((fun.return_type)(&data_types)?.as_ref().clone())
+                // verify that this is a valid set of data types for this function
+                functions::data_types(&input_expr_types, &fun.signature).map_err(
+                    |_| {
+                        let message = fun
+                            .signature
+                            .type_signature
+                            .error_message(&fun.name, &input_expr_types);
+                        DataFusionError::Plan(message)
+                    },
+                )?;
+
+                Ok((fun.return_type)(&input_expr_types)?.as_ref().clone())
             }
             Expr::Not(_)
             | Expr::IsNull(_)
