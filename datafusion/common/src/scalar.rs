@@ -1666,13 +1666,13 @@ macro_rules! build_timestamp_list {
                         $SIZE
                     )
                 }
-                TimeUnit::Microsecond => build_values_list_tz!(
+                TimeUnit::Millisecond => build_values_list_tz!(
                     TimestampMillisecondBuilder,
                     TimestampMillisecond,
                     values,
                     $SIZE
                 ),
-                TimeUnit::Millisecond => build_values_list_tz!(
+                TimeUnit::Microsecond => build_values_list_tz!(
                     TimestampMicrosecondBuilder,
                     TimestampMicrosecond,
                     values,
@@ -1739,7 +1739,7 @@ macro_rules! build_values_list_tz {
                     ScalarValue::$SCALAR_TY(None, _) => {
                         builder.values().append_null();
                     }
-                    _ => panic!("Incompatible ScalarValue for list"),
+                    other => panic!("Incompatible ScalarValue for list, {}", other.get_datatype()),
                 };
             }
             builder.append(true);
@@ -6096,6 +6096,17 @@ mod tests {
                 ScalarValue::new_interval_dt(0, -sign),
             ),
         ]
+    }
+
+    #[test]
+    fn test_build_timestamp_millisecond_list() {
+        let values = vec![ScalarValue::TimestampMillisecond(Some(1), None)];
+        let ts_list = ScalarValue::new_list(
+            Some(values),
+            DataType::Timestamp(TimeUnit::Millisecond, None),
+        );
+        let list = ts_list.to_array_of_size(1);
+        assert_eq!(1, list.len());
     }
 
     fn get_random_timestamps(sample_size: u64) -> Vec<ScalarValue> {
