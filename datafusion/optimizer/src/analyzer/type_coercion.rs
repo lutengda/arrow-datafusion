@@ -119,8 +119,14 @@ fn analyze_internal(
     }
 }
 
-pub(crate) struct TypeCoercionRewriter {
+pub struct TypeCoercionRewriter {
     pub(crate) schema: DFSchemaRef,
+}
+
+impl TypeCoercionRewriter {
+    pub fn new(schema: DFSchemaRef) -> Self {
+        Self { schema }
+    }
 }
 
 impl TreeNodeRewriter for TypeCoercionRewriter {
