@@ -66,19 +66,15 @@ fn analyze_internal(plan: LogicalPlan) -> Result<Transformed<LogicalPlan>> {
             let fields = sub_plan.schema().fields().iter().collect::<Vec<_>>();
             let new_fields = sub_plan.schema().fields_with_qualified(&table_name);
 
+            let projection_exprs = generate_projection_expr(&projection, sub_plan)?;
+            let plan_builder =
+                LogicalPlanBuilder::from(sub_plan.clone()).project(projection_exprs)?;
+
             if new_fields.eq(&fields) {
-                // If the schema of the inlined table is the same as the
-                // schema of the table scan, we can just replace the table
-                // scan with the inlined table.
-                Transformed::Yes(sub_plan.clone())
+                Transformed::Yes(plan_builder.build()?)
             } else {
                 let projection_exprs = generate_projection_expr(&projection, sub_plan)?;
-                // If the schema of the inlined table is different from the
-                // schema of the table scan, we need to add a projection to
-                // the inlined table to ensure that the schema of the table
-                // scan is the same as the schema of the inlined table.
-                let plan = LogicalPlanBuilder::from(sub_plan.clone())
-                    .project(projection_exprs)?
+                let plan = plan_builder
                     // Ensures that the reference to the inlined table remains the
                     // same, meaning we don't have to change any of the parent nodes
                     // that reference this table.
