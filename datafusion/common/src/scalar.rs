@@ -1739,7 +1739,10 @@ macro_rules! build_values_list_tz {
                     ScalarValue::$SCALAR_TY(None, _) => {
                         builder.values().append_null();
                     }
-                    other => panic!("Incompatible ScalarValue for list, {}", other.get_datatype()),
+                    other => panic!(
+                        "Incompatible ScalarValue for list, {}",
+                        other.get_datatype()
+                    ),
                 };
             }
             builder.append(true);

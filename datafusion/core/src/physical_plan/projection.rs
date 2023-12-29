@@ -303,9 +303,9 @@ fn get_expr_metadata(
 ) -> HashMap<String, String> {
     let mut metadata = HashMap::new();
 
-    for ref child in e.children() {
-        metadata.extend(get_expr_metadata(child, input_schema));
-    }
+    // for ref child in e.children() {
+    //     metadata.extend(get_expr_metadata(child, input_schema));
+    // }
 
     if let Some(column) = e.as_any().downcast_ref::<Column>() {
         let _ = input_schema
