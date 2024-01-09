@@ -73,7 +73,7 @@ fn analyze_internal(plan: LogicalPlan) -> Result<Transformed<LogicalPlan>> {
             if new_fields.eq(&fields) {
                 Transformed::Yes(plan_builder.build()?)
             } else {
-                let projection_exprs = generate_projection_expr(&projection, sub_plan)?;
+                let _projection_exprs = generate_projection_expr(&projection, sub_plan)?;
                 let plan = plan_builder
                     // Ensures that the reference to the inlined table remains the
                     // same, meaning we don't have to change any of the parent nodes

@@ -16,6 +16,7 @@
 # under the License.
 
 [workspace]
+resolver = "2"
 exclude = ["datafusion-cli"]
 members = [
     "datafusion/common",
@@ -48,7 +49,7 @@ rust-version = "1.64"
 arrow = { version = "42.0.0", features = ["prettyprint", "dyn_cmp_dict"] }
 arrow-flight = { version = "42.0.0", features = ["flight-sql-experimental"] }
 arrow-buffer = { version = "42.0.0", default-features = false }
-arrow-schema = { version = "42.0.0", default-features = false }
+arrow-schema = { version = "42.0.0", features = ["serde"], default-features = false }
 arrow-array = { version = "42.0.0", default-features = false, features = ["chrono-tz"] }
 parquet = { version = "42.0.0", features = ["arrow", "async", "object_store"] }
 sqlparser = { version = "0.35", features = ["visitor"] }

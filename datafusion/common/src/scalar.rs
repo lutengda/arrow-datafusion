@@ -49,6 +49,7 @@ use arrow::{
 use arrow_array::timezone::Tz;
 use arrow_array::ArrowNativeTypeOp;
 use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime};
+use serde::{Deserialize, Serialize};
 
 // Constants we use throughout this file:
 const MILLISECS_IN_ONE_DAY: i64 = 86_400_000;
@@ -64,7 +65,7 @@ const NANOSECS_IN_ONE_MONTH: i128 = 2_592_000_000_000_000; // assuming 30 days.
 /// See [datatypes](https://arrow.apache.org/docs/python/api/datatypes.html) for
 /// details on datatypes and the [format](https://github.com/apache/arrow/blob/master/format/Schema.fbs#L354-L375)
 /// for the definitive reference.
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum ScalarValue {
     /// represents `DataType::Null` (castable to/from any other type)
     Null,
