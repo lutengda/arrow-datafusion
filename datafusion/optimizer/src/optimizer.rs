@@ -31,7 +31,6 @@ use crate::filter_null_join_keys::FilterNullJoinKeys;
 use crate::merge_projection::MergeProjection;
 use crate::plan_signature::LogicalPlanSignature;
 use crate::propagate_empty_relation::PropagateEmptyRelation;
-use crate::push_down_aggregation::PushDownAggregation;
 use crate::push_down_filter::PushDownFilter;
 use crate::push_down_limit::PushDownLimit;
 use crate::push_down_projection::PushDownProjection;
@@ -253,7 +252,6 @@ impl Optimizer {
             Arc::new(CommonSubexprEliminate::new()),
             Arc::new(PushDownProjection::new()),
             Arc::new(EliminateProjection::new()),
-            Arc::new(PushDownAggregation::new()),
             // PushDownProjection can pushdown Projections through Limits, do PushDownLimit again.
             Arc::new(PushDownLimit::new()),
         ];
