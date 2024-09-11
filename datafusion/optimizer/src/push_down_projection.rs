@@ -336,10 +336,12 @@ impl OptimizerRule for PushDownProjection {
                     )?;
 
                     let new_expr = get_expr(&required_columns, filter.input.schema())?;
+
                     let new_projection = LogicalPlan::Projection(Projection::try_new(
                         new_expr,
                         filter.input.clone(),
                     )?);
+
                     let new_filter = child_plan.with_new_inputs(&[new_projection])?;
 
                     generate_plan!(projection_is_empty, plan, new_filter)
@@ -522,11 +524,20 @@ fn push_down_scan(
     // Building new projection from BTreeSet
     // preserving source projection order if it exists
     let projection = if let Some(original_projection) = &scan.projection {
-        original_projection
-            .clone()
+        /* original_projection
+        .clone()
+        .into_iter()
+        .filter(|idx| projection.contains(idx))
+        .collect::<Vec<_>>() */
+        let mut merged_projection: Vec<usize> = original_projection
             .into_iter()
-            .filter(|idx| projection.contains(idx))
-            .collect::<Vec<_>>()
+            .cloned()
+            .chain(projection.into_iter())
+            .collect();
+        let set: HashSet<_> = merged_projection.drain(..).collect();
+        let mut res: Vec<usize> = set.into_iter().collect();
+        res.sort();
+        res
     } else {
         projection.into_iter().collect::<Vec<_>>()
     };
