@@ -386,7 +386,11 @@ impl Accumulator for ApproxPercentileAccumulator {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
         let values = &values[0];
         let sorted_values = &arrow::compute::sort(values, None)?;
-        let sorted_values = ApproxPercentileAccumulator::convert_to_float(sorted_values)?;
+        let sorted_values =
+            ApproxPercentileAccumulator::convert_to_float(&sorted_values.slice(
+                sorted_values.null_count(),
+                sorted_values.len() - sorted_values.null_count(),
+            ))?;
         self.digest = self.digest.merge_sorted_f64(&sorted_values);
         Ok(())
     }
