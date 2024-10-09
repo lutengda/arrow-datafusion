@@ -76,8 +76,8 @@ impl TableSource for DefaultTableSource {
             .supports_aggregate_pushdown(group_expr, aggr_expr)
     }
 
-    fn push_down_projection(&self, proj: &[usize]) -> Option<Vec<usize>> {
-        self.table_provider.push_down_projection(proj)
+    fn push_down_projection(&self, proj: &[usize], is_tag_scan: bool) -> Option<Vec<usize>> {
+        self.table_provider.push_down_projection(proj, is_tag_scan)
     }
 
     fn table_type(&self) -> datafusion_expr::TableType {
