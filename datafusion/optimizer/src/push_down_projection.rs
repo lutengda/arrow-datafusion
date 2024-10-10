@@ -56,7 +56,9 @@ macro_rules! generate_plan {
 /// Optimizer that removes unused projections and aggregations from plans
 /// This reduces both scans and
 #[derive(Default)]
-pub struct PushDownProjection {}
+pub struct PushDownProjection {
+    is_tag_scan: bool,
+}
 
 impl OptimizerRule for PushDownProjection {
     fn try_optimize(
@@ -84,7 +86,7 @@ impl OptimizerRule for PushDownProjection {
             LogicalPlan::TableScan(scan)
                 if (scan.projection.is_none() && scan.agg_with_grouping.is_none()) =>
             {
-                return Ok(Some(push_down_scan(&HashSet::new(), scan, false)?));
+                return Ok(Some(push_down_scan(&HashSet::new(), scan, false, self.is_tag_scan)?));
             }
             _ => return Ok(None),
         };
@@ -157,12 +159,12 @@ impl OptimizerRule for PushDownProjection {
                 if projection_is_empty {
                     used_columns
                         .insert(scan.projected_schema.fields()[0].qualified_column());
-                    push_down_scan(&used_columns, scan, true)?
+                    push_down_scan(&used_columns, scan, true, self.is_tag_scan)?
                 } else {
                     for expr in projection.expr.iter() {
                         expr_to_columns(expr, &mut used_columns)?;
                     }
-                    let new_scan = push_down_scan(&used_columns, scan, true)?;
+                    let new_scan = push_down_scan(&used_columns, scan, true, self.is_tag_scan)?;
 
                     plan.with_new_inputs(&[new_scan])?
                 }
@@ -389,8 +391,8 @@ impl OptimizerRule for PushDownProjection {
 
 impl PushDownProjection {
     #[allow(missing_docs)]
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(is_tag_scan: bool) -> Self {
+        Self { is_tag_scan }
     }
 }
 
@@ -483,6 +485,7 @@ fn push_down_scan(
     used_columns: &HashSet<Column>,
     scan: &TableScan,
     has_projection: bool,
+    is_tag_scan: bool,
 ) -> Result<LogicalPlan> {
     // once we reach the table scan, we can use the accumulated set of column
     // names to construct the set of column indexes in the scan
@@ -544,7 +547,7 @@ fn push_down_scan(
 
     let projection = scan
         .source
-        .push_down_projection(&projection)
+        .push_down_projection(&projection, is_tag_scan)
         .unwrap_or(projection);
 
     // create the projected schema
@@ -1133,7 +1136,7 @@ mod tests {
 
     fn optimize(plan: &LogicalPlan) -> Result<LogicalPlan> {
         let optimizer = Optimizer::with_rules(vec![
-            Arc::new(PushDownProjection::new()),
+            Arc::new(PushDownProjection::new(false)),
             Arc::new(EliminateProjection::new()),
         ]);
         let mut optimized_plan = optimizer

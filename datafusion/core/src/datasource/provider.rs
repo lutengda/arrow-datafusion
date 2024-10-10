@@ -107,7 +107,7 @@ pub trait TableProvider: Sync + Send {
     }
 
     /// The projection is pushed down to the data source
-    fn push_down_projection(&self, _proj: &[usize]) -> Option<Vec<usize>> {
+    fn push_down_projection(&self, _proj: &[usize], _is_tag_scan: bool) -> Option<Vec<usize>> {
         None
     }
 
